@@ -1,0 +1,39 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 16
+    commands:
+      - echo Installing dependencies...
+      - npm install
+
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - REPOSITORY_URI='302290742155.dkr.ecr.ap-northeast-1.amazonaws.com/test'
+      - echo REPOSITORY_URI=$REPOSITORY_URI
+      - aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 302290742155.dkr.ecr.ap-northeast-1.amazonaws.com
+      - echo Build started on `date`
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - npm run build
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+      - TIME_TAG=`date +%Y%m%d%H%M%S`
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TIME_TAG
+
+  post_build:
+    commands:
+      - echo Pushing the Docker image to ECR...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$TIME_TAG
+      #- echo '[{"name":"web","imageUri":"'$REPOSITORY_URI':latest"}]' > imagedefinitions.json
+      - printf '[{"name":"web","imageUri":"%s"}]' "$REPOSITORY_URI:latest" > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
