@@ -4,6 +4,6 @@
 #COPY dist/shop /usr/share/nginx/html
 
 
-FROM httpd:latest
+FROM public.ecr.aws/docker/library/httpd:latest
 RUN rm -rf /usr/local/apache2/htdocs/*
 COPY dist/shop/ /usr/local/apache2/htdocs/
